@@ -1,49 +1,91 @@
 import pulp
 
-def execute_resolucao_problema(titulo, numero_variaveis, funcao_objetivo, restricoes, execede_funcaoObjetivo = 0, tipo='max'):
-
-    # Criação do modelo, dependendo se é para maximizar ou minimizar
+def execute_resolucao_problema(
+    titulo,
+    numero_variaveis,
+    funcao_objetivo,
+    restricoes,
+    execede_funcaoObjetivo=0,
+    tipo='max'
+):
+    # -----------------------------------------
+    # Criação do modelo
+    # -----------------------------------------
     sentido = pulp.LpMaximize if tipo.lower() == 'max' else pulp.LpMinimize
     model = pulp.LpProblem(titulo, sense=sentido)
 
-    # Adiciona as variáveis de decisão
-    x = pulp.LpVariable.dict(indices=range(1, numero_variaveis + 1), cat=pulp.LpBinary, lowBound=0, name='x')
+    # -----------------------------------------
+    # Variáveis de decisão
+    # -----------------------------------------
+    x = pulp.LpVariable.dict(
+        indices=range(1, numero_variaveis + 1),
+        cat=pulp.LpBinary,
+        lowBound=0,
+        name='x'
+    )
 
-    # Adiciona as variáveis de folga conforme o número de restrições
-    variaveis_folga_excesso = pulp.LpVariable.dict(indices=range(1, len(restricoes) + 1), cat=pulp.LpContinuous, lowBound=0, name='s')
+    # -----------------------------------------
+    # Variáveis de folga / excesso
+    # -----------------------------------------
+    variaveis_folga_excesso = pulp.LpVariable.dict(
+        indices=range(1, len(restricoes) + 1),
+        cat=pulp.LpContinuous,
+        lowBound=0,
+        name='s'
+    )
 
-    # Adiciona as restrições do problema
-    for indice, (coef, operacao, resultado_equacao) in enumerate(restricoes, 1):
-        restricao = pulp.lpSum(coef[j - 1] * x[j] for j in range(1, numero_variaveis + 1))
+    # -----------------------------------------
+    # Restrições
+    # -----------------------------------------
+    for indice, (coef, operacao, resultado) in enumerate(restricoes, 1):
+        expr = pulp.lpSum(coef[j - 1] * x[j] for j in range(1, numero_variaveis + 1))
 
         if operacao == '<=':
-            model.addConstraint(restricao + variaveis_folga_excesso[indice] == resultado_equacao, name=f"Restrição_{indice}")
+            model += expr + variaveis_folga_excesso[indice] == resultado
         elif operacao == '>=':
-            model.addConstraint(restricao - variaveis_folga_excesso[indice] == resultado_equacao, name=f"Restrição_{indice}")
+            model += expr - variaveis_folga_excesso[indice] == resultado
         elif operacao == '=':
-            model.addConstraint(restricao == resultado_equacao, name=f"Restrição_{indice}")
+            model += expr == resultado
         else:
             raise ValueError(f"Operador inválido: {operacao}")
 
+    # -----------------------------------------
     # Função objetivo
-    model.setObjective(pulp.lpSum(funcao_objetivo[j - 1] * x[j] for j in range(1, numero_variaveis + 1)) + execede_funcaoObjetivo)
+    # -----------------------------------------
+    model += (
+        pulp.lpSum(funcao_objetivo[j - 1] * x[j] for j in range(1, numero_variaveis + 1))
+        + execede_funcaoObjetivo
+    )
 
-    # Resolver o modelo
+    # -----------------------------------------
+    # Resolver
+    # -----------------------------------------
     model.solve()
 
-    # Exibir resultado
-    print(f"Resultado: {titulo}", pulp.LpStatus[model.status])
+    # -----------------------------------------
+    # Montagem do objeto de retorno
+    # -----------------------------------------
+    resultado = {
+        "titulo": titulo,
+        "status": pulp.LpStatus[model.status],
+        "status_code": model.status,
+        "valor_otimo": pulp.value(model.objective),
+        "variaveis": {},
+        "folgas_excessos": {},
+        "variaveis_selecionadas": []
+    }
+
+    # Variáveis de decisão
     for j in range(1, numero_variaveis + 1):
-        val = x[j].value()
-        print(f"x{j} = {val:.2f}" if val is not None else f"x{j} = 0.00")
+        val = x[j].value() or 0.0
+        resultado["variaveis"][j] = val
 
+        if val > 0.5:
+            resultado["variaveis_selecionadas"].append(j)
+
+    # Folgas / excessos
     for i in range(1, len(restricoes) + 1):
-        val = variaveis_folga_excesso[i].value()
-        print(f"s{i} (folga/excesso) = {val:.2f}" if val is not None else f"s{i} (folga/excesso) = 0.00")
+        val = variaveis_folga_excesso[i].value() or 0.0
+        resultado["folgas_excessos"][i] = val
 
-    print(f"Valor ótimo: {pulp.value(model.objective):.2f}")
-
-
-
-
-
+    return resultado
