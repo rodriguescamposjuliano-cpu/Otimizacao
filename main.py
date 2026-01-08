@@ -1,5 +1,8 @@
 from fastapi import FastAPI
 from scraping.rome2rio_playwright import Rome2RioScraper
+import asyncio
+if hasattr(asyncio, "WindowsProactorEventLoopPolicy"):
+    asyncio.set_event_loop_policy(asyncio.WindowsProactorEventLoopPolicy())
 
 app = FastAPI(title="Route Optimizer")
 

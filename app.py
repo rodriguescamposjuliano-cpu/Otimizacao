@@ -1,14 +1,20 @@
 import streamlit as st
 import asyncio
-from datetime import date
+from datetime import date, datetime, timedelta
+
 from crawler import crawler_rome2rio
 from optimization.otimizador import execute_resolucao_problema
+from scraping.hotels_serpapi import get_top10_best_rated_total_and_stars
+from scraping.cambio_serpapi import get_cambio_usd_brl_serpapi
 
 VALOR_HORA_POR_PERFIL = {
     "Mais barato": 40,
     "Equilibrado": 120,
     "Mais rápido": 300
 }
+
+CAMBIO_USD_BRL_DEFAULT = 5.0
+CAMBIO_CACHE_TTL = timedelta(hours=1)  # atualiza no máximo 1x por hora
 
 # =========================================================
 # ESTADOS GLOBAIS
@@ -24,11 +30,21 @@ if "rotas" not in st.session_state:
         "perfil": "Mais rápido",
         "orcamento": 6000,
         "tempo_max": 30,
-        "diarias": 1
+        "diarias": 1,
+        "num_hospedes": 2,
+        "min_estrelas": 3,
+        "max_estrelas": 5
     }]
 
 if "resultados" not in st.session_state:
     st.session_state.resultados = []
+
+# Cache do câmbio + timestamp
+if "cambio_usd_brl" not in st.session_state:
+    st.session_state.cambio_usd_brl = None
+
+if "cambio_usd_brl_ts" not in st.session_state:
+    st.session_state.cambio_usd_brl_ts = None
 
 # =========================================================
 # FUNÇÕES UTILITÁRIAS
@@ -73,11 +89,54 @@ def parse_preco(preco_str: str) -> float:
         return 0.0
 
 
+def get_cambio_usd_brl_cached() -> float:
+    """
+    Busca o câmbio USD->BRL via SerpApi no máximo 1 vez por hora.
+    Usa cache em st.session_state com timestamp.
+    """
+    agora = datetime.utcnow()
+
+    # Se já existe câmbio e timestamp, e ainda está dentro do TTL, reutiliza
+    if st.session_state.cambio_usd_brl is not None and st.session_state.cambio_usd_brl_ts is not None:
+        idade = agora - st.session_state.cambio_usd_brl_ts
+        if idade < CAMBIO_CACHE_TTL:
+            return float(st.session_state.cambio_usd_brl)
+
+    # Caso contrário, tenta atualizar
+    try:
+        novo_cambio = float(get_cambio_usd_brl_serpapi())
+        st.session_state.cambio_usd_brl = novo_cambio
+        st.session_state.cambio_usd_brl_ts = agora
+        return novo_cambio
+
+    except Exception as e:
+        # fallback seguro (mas agora você verá o erro real)
+        st.warning(
+            f"⚠️ Falha ao atualizar câmbio USD→BRL. "
+            f"Usando fallback {CAMBIO_USD_BRL_DEFAULT:.2f}. Erro: {e}"
+        )
+        st.session_state.cambio_usd_brl = float(CAMBIO_USD_BRL_DEFAULT)
+        st.session_state.cambio_usd_brl_ts = agora
+        return float(CAMBIO_USD_BRL_DEFAULT)
+
+
 # =========================================================
 # CONFIGURAÇÃO DA PÁGINA
 # =========================================================
 st.set_page_config(page_title="Otimizador de Viagens", layout="wide")
 st.title("✈️ Otimizador de Viagens")
+
+# Mostrar câmbio atual no topo
+cambio_atual = get_cambio_usd_brl_cached()
+
+st.caption(
+    f"Câmbio automático (USD→BRL): **{cambio_atual:.4f}** "
+    f"(fallback={CAMBIO_USD_BRL_DEFAULT:.2f})"
+)
+
+ts = st.session_state.get("cambio_usd_brl_ts")
+if ts:
+    st.caption(f"Última atualização do câmbio: {ts.strftime('%d/%m/%Y %H:%M:%S')} UTC")
 
 # =========================================================
 # INTERFACE – ROTAS
@@ -110,7 +169,7 @@ for i, c in enumerate(st.session_state.rotas):
             disabled=st.session_state.processando
         )
 
-    col4, col5, col6, col7 = st.columns(4)
+    col4, col5, col6, col7, col8, col9 = st.columns(6)
 
     with col4:
         c["perfil"] = st.selectbox(
@@ -151,6 +210,31 @@ for i, c in enumerate(st.session_state.rotas):
             disabled=st.session_state.processando
         )
 
+    with col8:
+        c["num_hospedes"] = st.number_input(
+            "Hóspedes",
+            min_value=1,
+            value=int(c.get("num_hospedes", 2)),
+            step=1,
+            key=f"hosp_{i}",
+            disabled=st.session_state.processando
+        )
+
+    with col9:
+        estrelas_min_max = st.slider(
+            "Estrelas",
+            min_value=1,
+            max_value=5,
+            value=(
+                int(c.get("min_estrelas", 3)),
+                int(c.get("max_estrelas", 5))
+            ),
+            step=1,
+            key=f"stars_{i}",
+            disabled=st.session_state.processando
+        )
+        c["min_estrelas"], c["max_estrelas"] = estrelas_min_max
+
     if st.button("❌ Remover", key=f"rem_{i}", disabled=st.session_state.processando):
         st.session_state.rotas.pop(i)
         st.rerun()
@@ -171,7 +255,10 @@ with col_a:
             "perfil": "Mais rápido",
             "orcamento": 6000,
             "tempo_max": 30,
-            "diarias": 1
+            "diarias": 1,
+            "num_hospedes": 2,
+            "min_estrelas": 3,
+            "max_estrelas": 5
         })
         st.rerun()
 
@@ -189,6 +276,9 @@ if st.session_state.processando:
     total = len(st.session_state.rotas)
     progresso = st.progress(0)
     status = st.empty()
+
+    # pega câmbio uma vez para a rodada inteira
+    cambio = get_cambio_usd_brl_cached()
 
     for idx, c in enumerate(st.session_state.rotas):
 
@@ -220,12 +310,38 @@ if st.session_state.processando:
                 })
 
         # -----------------------------------------------------
+        # HOTÉIS (SerpApi) – Top 10 melhores avaliados (filtrados por estrelas)
+        # -----------------------------------------------------
+        hotel_totais_usd = []
+        hotel_totais_brl = []
+        hotel_estrelas = []
+        hotel_custo_referencia_brl = 0.0
+
+        try:
+            hotel_totais_usd, hotel_estrelas = get_top10_best_rated_total_and_stars(
+                destino=c["destino"],
+                data_entrada=c["data_partida"].isoformat(),
+                dias_estadia=int(c["diarias"]),
+                min_estrelas=int(c.get("min_estrelas", 1)),
+                max_estrelas=int(c.get("max_estrelas", 5)),
+                num_hospedes=int(c.get("num_hospedes", 2)),
+            )
+
+            hotel_totais_brl = [float(x) * cambio for x in hotel_totais_usd]
+
+            if hotel_totais_brl:
+                hotel_custo_referencia_brl = min(hotel_totais_brl)
+
+        except Exception as e:
+            st.warning(f"⚠️ Falha ao buscar hotéis para {c['destino']}: {e}")
+
+        # -----------------------------------------------------
         # Filtro de viabilidade
         # -----------------------------------------------------
         rotas_validas = [
             alt for alt in alternativas
             if alt["tempo"] <= c["tempo_max"]
-            and alt["preco"] <= c["orcamento"]
+            and (alt["preco"] + hotel_custo_referencia_brl) <= c["orcamento"]
         ]
 
         if not rotas_validas:
@@ -239,12 +355,12 @@ if st.session_state.processando:
             objetivo = [alt["tempo"] for alt in rotas_validas]
 
         elif c["perfil"] == "Mais barato":
-            objetivo = [alt["preco"] for alt in rotas_validas]
+            objetivo = [alt["preco"] + hotel_custo_referencia_brl for alt in rotas_validas]
 
         else:
             valor_hora = VALOR_HORA_POR_PERFIL[c["perfil"]]
             objetivo = [
-                alt["preco"] + (alt["tempo"] * valor_hora)
+                (alt["preco"] + hotel_custo_referencia_brl) + (alt["tempo"] * valor_hora)
                 for alt in rotas_validas
             ]
 
@@ -266,7 +382,6 @@ if st.session_state.processando:
             if v == 1
         )
 
-
         rota_escolhida = rotas_validas[indice - 1]
 
         valor = (
@@ -279,7 +394,12 @@ if st.session_state.processando:
             "rota": idx + 1,
             "perfil": c["perfil"],
             "valor": valor,
-            "detalhes": rota_escolhida
+            "detalhes": rota_escolhida,
+            "cambio_usd_brl": cambio,
+            "hotel_top10_totais_usd": hotel_totais_usd,
+            "hotel_top10_totais_brl": hotel_totais_brl,
+            "hotel_top10_estrelas": hotel_estrelas,
+            "hotel_custo_referencia_brl": hotel_custo_referencia_brl
         })
 
         progresso.progress((idx + 1) / total)
@@ -309,9 +429,22 @@ if st.session_state.resultados:
             st.markdown(f"**Chegada:** {d['chegada']}")
             st.markdown(f"**Tempo total:** {d['tempo_total']}")
             st.markdown(f"**Conexões:** {d['conexoes']}")
-            st.markdown(f"**Preço:** {d['Preco']}")
+            st.markdown(f"**Preço (transporte):** {d['Preco']}")
 
             st.markdown("### ✈️ Roteiro")
             for etapa in d["roteiro"]:
                 texto = etapa["etapa"].replace("\n", "<br>")
                 st.markdown(f"- {texto}", unsafe_allow_html=True)
+
+            st.markdown("### 🏨 Hotéis (Top 10 melhores avaliados)")
+            if r.get("hotel_top10_totais_usd"):
+                st.write("Câmbio USD → BRL:", f"{r.get('cambio_usd_brl', CAMBIO_USD_BRL_DEFAULT):.4f}")
+                st.write("Totais (USD):", r["hotel_top10_totais_usd"])
+                st.write("Totais (BRL):", [round(x, 2) for x in r.get("hotel_top10_totais_brl", [])])
+                st.write("Estrelas:", r["hotel_top10_estrelas"])
+                st.write(
+                    "Custo referência (mínimo, BRL):",
+                    f"R$ {r.get('hotel_custo_referencia_brl', 0.0):,.2f}"
+                )
+            else:
+                st.write("Sem dados de hotéis para esta rota.")
