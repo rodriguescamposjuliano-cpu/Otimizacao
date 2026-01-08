@@ -1,0 +1,9 @@
+requests
+beautifulsoup4
+pandas
+pulp
+fastapi
+uvicorn
+playwright
+networkx
+streamlit
