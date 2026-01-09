@@ -7,3 +7,5 @@ uvicorn
 playwright
 networkx
 streamlit
+pymoo
+plotly
