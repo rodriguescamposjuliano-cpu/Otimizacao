@@ -2,8 +2,9 @@ from playwright.async_api import async_playwright, TimeoutError as PlaywrightTim
 import asyncio
 from playwright.async_api import Page
 
-async def buscar_rotas(origem: str, destino: str):
-    url = f"https://www.rome2rio.com/map/{origem}/{destino}"
+async def buscar_rotas(origem: str, destino: str, data_partida: str):
+    url = f"https://www.rome2rio.com/map/{origem}/{destino}?departureDate={data_partida}#r/Fly-{origem}-to-{destino}/s/2"
+
     routes = []
 
     async with async_playwright() as p:
@@ -241,14 +242,15 @@ async def extract_route_detail_from_link(page: Page):
                         step_text = await step.inner_text()
                         roteiro.append({"etapa": step_text, "ordem": s})
 
-                resultados.append({
-                    "saida": departure.strip(),
-                    "chegada": arrival.strip(),
-                    "tempo_total": duration,
-                    "conexoes": connections,
-                    "roteiro": roteiro,
-                    "Preco": price
-                })
+                if price != '' and duration != '':
+                    resultados.append({
+                        "saida": departure.strip(),
+                        "chegada": arrival.strip(),
+                        "tempo_total": duration,
+                        "conexoes": connections,
+                        "roteiro": roteiro,
+                        "Preco": price
+                    })
 
             except Exception as e:
                 print(f"[ERRO] Falha no schedule {i}: {e}")

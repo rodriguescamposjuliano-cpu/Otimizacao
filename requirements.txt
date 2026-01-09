@@ -9,3 +9,4 @@ networkx
 streamlit
 pymoo
 plotly
+dotenv
