@@ -17,7 +17,7 @@ def render_rotas():
 
         with col_btn:
             if not st.session_state.processando:
-                if st.button("❌", key=f"rem_{i}"):
+                if st.button("", icon=":material/remove:", key=f"rem_{i}"):
                     st.session_state.rotas.pop(i)
 
                     # LIMPA RESULTADOS

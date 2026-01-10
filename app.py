@@ -18,9 +18,10 @@ placeholders = render_rotas()
 # ================= PROCESSAMENTO =================
 if st.session_state.processando:
 
-    st.session_state.progress_text.text(f"Processando rota 1 de {len(st.session_state.rotas)} ({0}%)")
-
     for idx, rota in enumerate(st.session_state.rotas):
+
+        progresso = (idx) / len(st.session_state.rotas)
+        st.session_state.progress_text.text(f"Processando rota {idx + 1} de {len(st.session_state.rotas)} ({int(progresso*100)}%)")
 
         alternativas = RouteService.buscar_alternativas(
             rota["origem"],
