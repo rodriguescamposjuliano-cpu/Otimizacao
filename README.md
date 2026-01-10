@@ -1,17 +1,32 @@
-# Trabalho Módulo 3 - Pesquisa Operacional
+# ✈️ Trabalho – Módulo 3
+Pesquisa Operacional aplicada à Otimização de Rotas Aéreas
 
 [![Python](https://img.shields.io/badge/python-3.11-blue)](https://www.python.org/)
 [![Status](https://img.shields.io/badge/status-em%20desenvolvimento-yellow)](README.md)
 
-O objetivo deste projeto é desenvolver uma ferramenta capaz de identificar a melhor rota de voo entre diversas alternativas obtidas do site Rome2Rio, 
-considerando múltiplos critérios: tempo total, preço e número de conexões.
+Este projeto consiste no desenvolvimento de uma ferramenta computacional para apoio à decisão, baseada em Pesquisa Operacional e Otimização Multiobjetivo, capaz de identificar rotas aéreas eficientes a partir de múltiplas alternativas obtidas do site Rome2Rio.
 
-Objetivos Principais
+A solução considera simultaneamente critérios conflitantes, tais como:
 
-- **Zoneamento Energético:** Identificar quais microrregiões de Goiás apresentam maior potencial para diferentes tipos de energia renovável.  
-- **Sazonalidade Estratégica:** Apoiar a formulação de políticas que promovam a complementaridade energética ao longo do ano.  
-- **Sinergia Hidro-Solar:** Otimizar a integração entre a geração hidrelétrica existente e o potencial solar e eólico do estado.  
-- **Capacidade de Escoamento:** Avaliar como a infraestrutura atual de transmissão influencia o aproveitamento do potencial renovável.
+⏱️ Tempo total de viagem
+💰 Custo da passagem
+🔁 Número de conexões
+
+O problema é tratado como um problema de otimização multiobjetivo discreto, resolvido por meio do algoritmo evolutivo NSGA-II (Non-dominated Sorting Genetic Algorithm II)
+
+🎯 Objetivos do Projeto
+Objetivo Geral
+
+Desenvolver uma aplicação capaz de identificar soluções eficientes (ótimas de Pareto) para o problema de escolha de rotas aéreas, considerando múltiplos critérios simultaneamente.
+
+Objetivos Específicos
+
+✔️ Automatizar a extração de dados reais de rotas aéreas via web crawling
+✔️ Estruturar e normalizar dados heterogêneos (preço, tempo, conexões)
+✔️ Formular matematicamente o problema como uma otimização multiobjetivo
+✔️ Implementar o NSGA-II como solver do problema
+✔️ Visualizar e interpretar a Fronteira de Pareto
+✔️ Disponibilizar uma interface interativa para apoio à decisão
 
 ---
 
