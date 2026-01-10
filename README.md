@@ -32,7 +32,6 @@ A solução considera simultaneamente critérios conflitantes, tais como:
 O problema é tratado como um problema de otimização multiobjetivo discreto, resolvido por meio do algoritmo evolutivo NSGA-II (Non-dominated Sorting Genetic Algorithm II)
 
 🎯 Objetivos do Projeto
-Objetivo Geral
 
 Desenvolver uma aplicação capaz de identificar soluções eficientes (ótimas de Pareto) para o problema de escolha de rotas aéreas, considerando múltiplos critérios simultaneamente.
 
@@ -113,7 +112,7 @@ Otimizacao/
 ```
 ## Iniciar a Aplicacao
 
-1. Execute o arquivo app.py para iniciar a aplicação
+Execute o arquivo app.py para iniciar a aplicação
    ```plaintext
    python app.py
    ```
