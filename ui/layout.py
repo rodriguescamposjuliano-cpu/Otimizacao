@@ -4,10 +4,11 @@ import streamlit as st
 def setup_page():
     st.set_page_config(
         page_title="Otimizador de Viagens",
-        layout="wide"
+        layout="wide",
+        page_icon=":airplane:"
     )
 
-    st.title("✈️ Otimizador de Viagens (NSGA-II com Restrições)")
+    st.title(":flight_departure: Seu Voo Ideal: Escolha Inteligente de Rotas")
     st.markdown(
         "Organize suas rotas, defina preferências e restrições, e otimize automaticamente."
     )

@@ -161,7 +161,7 @@ def render_resultado_rota(rota_idx: int):
                     legend_title="Classificação"
                 )
 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='content')
 
 
             # =====================================================

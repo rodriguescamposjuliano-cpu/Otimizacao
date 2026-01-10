@@ -47,8 +47,15 @@ def render_sidebar():
             st.session_state.resultados = []
             st.session_state.processando = True
             st.rerun()
+
+            
     else:
         st.sidebar.info("⏳ Otimização em andamento...")
+        # Barra de progresso abaixo do texto
+        progress_text = st.sidebar.empty()
+        progress_bar = st.sidebar.progress(0.0)
+        st.session_state.progress_bar = progress_bar
+        st.session_state.progress_text = progress_text
 
     st.sidebar.markdown("---")
     st.sidebar.write("Rotas cadastradas:", len(st.session_state.rotas))
