@@ -84,19 +84,19 @@ Objetivos Específicos
 Otimizacao/
 │
 ├── Crawler/                   
-│   ├── crawler_rome2rio.py        # Faz a busca no site Rome2Rio
+│   ├── crawler_rome2rio.py        # Web crawler do Rome2Rio
 │   └── 
 │   
 ├── Domain/
-│   └── models.py # Responsável por definir os objetos.        
-│   ├── parsers.py # Classe utilitária, contém funções para formatações dos valores            
+│   └── models.py # Modelos de domínio      
+│   ├── parsers.py # Normalização e formatação         
 |
 ├── optimization                
-│   └── nsga2_solver.py # Classe que contém o solver NSGA2
+│   └── nsga2_solver.py # Solver NSGA-II
 │
 ├── services                
-│   └── optimization_service.py 
-│   └── route_service.py 
+│   └── optimization_service.py # Orquestra a otimização
+│   └── route_service.py # Lógica de rotas
 │
 ├── ui                
 │   └── layout.py
@@ -106,7 +106,7 @@ Otimizacao/
 │   └── sidebar.py
 |
 ├── .gitignore
-├── app.py
+├── app.py # Ponto de entrada da aplicação
 ├── README.md
 ├── requirements.txt        
 └── .env           
