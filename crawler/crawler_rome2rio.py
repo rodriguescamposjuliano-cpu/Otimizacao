@@ -29,14 +29,14 @@ async def buscar_rotas(origem: str, destino: str, data_partida: str):
         try:
             await page.wait_for_selector(
                 'div[data-testid^="trip-search-result"]',
-                timeout=15000  # ✅ curto, mas suficiente
+                timeout=15000
             )
         except PlaywrightTimeout:
             print("Nenhum resultado carregado.")
             await browser.close()
             return routes
 
-        # ✅ Clica nos "Show more" se existirem
+        # Executa o Clica nos "Show more" se existirem
         while True:
             buttons = page.locator("button")
             count = await buttons.count()
@@ -54,7 +54,7 @@ async def buscar_rotas(origem: str, destino: str, data_partida: str):
             if not found:
                 break
 
-        # 🔽 Scroll suave para lazy-load
+        # Executa o Scroll suave para lazy-load
         previous_count = 0
         while True:
             cards = page.locator('div[data-testid^="trip-search-result"] a[href*="#r/"]')
@@ -65,7 +65,7 @@ async def buscar_rotas(origem: str, destino: str, data_partida: str):
             await page.evaluate("window.scrollBy(0, window.innerHeight)")
             await page.wait_for_timeout(500)
 
-        # 🔍 Extrai os dados
+        # Realiza a Extração dos dados
         count = await cards.count()
         for i in range(count):
             card = cards.nth(i)
@@ -88,7 +88,7 @@ async def buscar_rotas(origem: str, destino: str, data_partida: str):
                     elif "car" in class_attr:
                         transport_types.append("car")
 
-            # 🔎 Filtro: somente voo
+            # Filtro: carrega somente as opções relacionadas a voo
             if not (len(transport_types) == 1 and transport_types[0] == "plane"):
                 continue  # ignora rota multimodal
 
@@ -147,14 +147,12 @@ async def extract_route_detail_from_link(page: Page):
             
             schedules_locator = page.locator('li[data-testid="scheduleCell"]')
         except Exception as e:
-            print(f"[ERRO] Nenhum schedule encontrado: {e}")
+            print(f"[ERRO] Nenhum voo encontrado: {e}")
             return resultados
-
 
         timeout_total = 25
         end_time = asyncio.get_event_loop().time() + timeout_total
 
-        
         # 🔽 Scroll adaptativo até carregar todos os schedules
         previous_count = 0
         stable_iterations = 0
@@ -168,11 +166,8 @@ async def extract_route_detail_from_link(page: Page):
             await page.evaluate("window.scrollBy(0, 500)")
             await asyncio.sleep(0.7)
 
-
-
-
         schedule_count = await schedules_locator.count()
-        print(f"[INFO] {schedule_count} schedules encontrados")
+        print(f"[INFO] {schedule_count} voos encontrados")
 
         for i in range(schedule_count):
             try:
@@ -189,7 +184,7 @@ async def extract_route_detail_from_link(page: Page):
                 if arrival_day_p:
                     arrival += " " + arrival_day_p.strip()
 
-                # 💰 Valor da passagem
+                # Valor da passagem
                 price = ""
 
                 price_button = leg.locator(
@@ -205,7 +200,7 @@ async def extract_route_detail_from_link(page: Page):
                 details_button = leg.locator('button[aria-label="View details"]')
                 roteiro = []
 
-                # 🔹 Tempo total e número de conexões
+                # Tempo total e número de conexões
                 duration = ""
                 connections = 0
 
@@ -253,7 +248,7 @@ async def extract_route_detail_from_link(page: Page):
                     })
 
             except Exception as e:
-                print(f"[ERRO] Falha no schedule {i}: {e}")
+                print(f"[ERRO] Falha no voo {i}: {e}")
                 continue
 
         return resultados

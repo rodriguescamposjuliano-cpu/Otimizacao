@@ -4,7 +4,7 @@ load_dotenv()
 from scraping.hotels_serpapi import get_top10_best_rated_total_stars_names
 
 totais, estrelas, nomes = get_top10_best_rated_total_stars_names(
-    destino="Seattle WA",
+    destino="Rio Grande do Sul",
     data_entrada="2026-01-15",
     dias_estadia=3,
     min_estrelas=3,
@@ -14,4 +14,4 @@ totais, estrelas, nomes = get_top10_best_rated_total_stars_names(
 
 print("Totais:", totais)
 print("Estrelas:", estrelas)
-print("Estrelas:", nomes)
+print("Nome dos hotéis:", nomes)
