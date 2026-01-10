@@ -6,10 +6,27 @@ Pesquisa Operacional aplicada à Otimização de Rotas Aéreas
 
 Este projeto consiste no desenvolvimento de uma ferramenta computacional para apoio à decisão, baseada em Pesquisa Operacional e Otimização Multiobjetivo, capaz de identificar rotas aéreas eficientes a partir de múltiplas alternativas obtidas do site Rome2Rio.
 
+---
+
+## Índice
+
+- [Descricao](#descricao)
+- [Requisitos](#requisitos)
+- [Instalacao](#instalacao)
+- [Estrutura do Projeto](#estrutura-do-projeto)
+- [Iniciar a Aplicacao](#Iniciar-a-aplicacao)
+- [Sequencia do Processamento](#Sequencia-do-Processamento)
+
+---
+
+## Descricao
+
 A solução considera simultaneamente critérios conflitantes, tais como:
 
 ⏱️ Tempo total de viagem
+
 💰 Custo da passagem
+
 🔁 Número de conexões
 
 O problema é tratado como um problema de otimização multiobjetivo discreto, resolvido por meio do algoritmo evolutivo NSGA-II (Non-dominated Sorting Genetic Algorithm II)
@@ -22,33 +39,16 @@ Desenvolver uma aplicação capaz de identificar soluções eficientes (ótimas 
 Objetivos Específicos
 
 ✔️ Automatizar a extração de dados reais de rotas aéreas via web crawling
+
 ✔️ Estruturar e normalizar dados heterogêneos (preço, tempo, conexões)
+
 ✔️ Formular matematicamente o problema como uma otimização multiobjetivo
+
 ✔️ Implementar o NSGA-II como solver do problema
+
 ✔️ Visualizar e interpretar a Fronteira de Pareto
+
 ✔️ Disponibilizar uma interface interativa para apoio à decisão
-
----
-
-## Índice
-
-- [Descricao](#descricao)
-- [Sequencia do processamento](#sequencia-do-processamento)
-- [Fonte de Dados](#fonte-de-dados)
-- [Requisitos](#requisitos)
-- [Instalacao](#instalacao)
-- [Estrutura do Projeto](#estrutura-do-projeto)
-- [Como Rodar](#como-rodar)
-- [Visualizacao](#visualizacao)
-
----
-
-## Descricao
-
-O projeto realiza as seguintes etapas:
-
-1. Realiza a busca de todos os voos conforme a origem, destino e data de partida
-2. Prepara os dados dos voos, preço, tempo e número de conexões
      
 ## Requisitos
 
@@ -111,15 +111,30 @@ Otimizacao/
 ├── requirements.txt        
 └── .env           
 ```
-## Como utilizar a aplicação
+## Iniciar a Aplicacao
 
 1. Execute o arquivo app.py para iniciar a aplicação
    ```plaintext
    python app.py
    ```
-2. Após abrir a aplicação selecione as rotas e processe a otimização
 
+## Sequencia do Processamento
 
+📥 Entrada do usuário (origem, destino, data)
+
+🕷️ Web Crawling no Rome2Rio
+
+🧹 Tratamento e normalização dos dados
+
+📊 Construção das variáveis de decisão
+
+⚙️ Execução do NSGA-II
+
+🟢 Identificação das soluções não-dominadas
+
+📈 Visualização da Fronteira de Pareto
+
+🧭 Exibição das melhores rotas ao usuário
  
 
 
