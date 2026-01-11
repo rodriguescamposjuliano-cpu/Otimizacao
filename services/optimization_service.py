@@ -19,21 +19,24 @@ class OptimizationService:
             return None
 
         F = res.F
-        X = res.X.astype(int)
+        X = np.asarray(res.X, dtype=int).ravel()
 
         F_unique, idx_unique = np.unique(F, axis=0, return_index=True)
         X_unique = X[idx_unique]
 
         if perfil == "Mais barato":
             idx_sol = np.argmin(F_unique[:, 0])
+
         elif perfil == "Mais rápido":
-            tempos = [alternativas[i[0]].tempo for i in X_unique]
+            tempos = [alternativas[i].tempo for i in X_unique]
             idx_sol = np.argmin(tempos)
+
         else:
             F_norm = (F_unique - F_unique.min(axis=0)) / (np.ptp(F_unique, axis=0) + 1e-9)
             idx_sol = np.argmin(F_norm.sum(axis=1))
 
-        escolhida = alternativas[X_unique[idx_sol, 0]]
+        escolhida = alternativas[X_unique[idx_sol]]
+
 
         return ResultadoOtimizacao(
             rota_idx=rota_idx,
@@ -41,7 +44,7 @@ class OptimizationService:
             alternativa_escolhida=escolhida,
             alternativas=alternativas,
             pareto=F_unique,
-            pareto_idx=X_unique[:, 0].tolist(),
+            pareto_idx=X_unique.tolist(),
             tempo_max=tempo_max,
             orcamento=orcamento
         )
@@ -58,5 +61,5 @@ class OptimizationService:
             pareto_idx=None,
             tempo_max=tempo_max,
             orcamento=orcamento,
-            mensagem="❌ Nenhuma alternativa encontrada para esta rota."
+            mensagem=":warning: Nenhuma alternativa encontrada para esta rota. Verifique a data de partida informada."
         )

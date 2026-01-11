@@ -30,3 +30,8 @@ def parse_preco(preco_str: str) -> float:
 
 def format_preco(preco: float) -> str:
     return f"R$ {preco:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+def format_estrelas(x):
+    if x is None or x != x:
+        return "—"
+    return str(int(x))

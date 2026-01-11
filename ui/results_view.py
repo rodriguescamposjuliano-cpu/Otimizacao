@@ -1,7 +1,9 @@
 import streamlit as st
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
-from domain.parsers import format_preco, format_tempo_horas
+from domain.parsers import format_preco, format_tempo_horas, format_estrelas
+from crawler.hotels_serpapi import get_top10_best_rated_total_stars_names
 
 # =========================================================
 # APRESENTA OS RESULTADOS
@@ -22,6 +24,7 @@ def render_resultado_rota(rota_idx: int):
         return
 
     for r in resultados:
+        rota = st.session_state.rotas[rota_idx - 1]
 
         with st.expander(
             f"📊 Resultado da Otimização | Perfil: {r.perfil}",
@@ -32,12 +35,13 @@ def render_resultado_rota(rota_idx: int):
             # SEM ALTERNATIVAS
             # =====================================================
             if not r.alternativas:
-                st.error("❌ Nenhuma alternativa encontrada para esta rota.")
+                st.warning(r.mensagem)
                 st.markdown(
                     f"""
-                    **Restrições aplicadas**
+                    **Restrições escolhidas**
                     - ⏱ Tempo máximo: {format_tempo_horas(r.tempo_max)}
                     - 💰 Orçamento máximo: {format_preco(r.orcamento)}
+                    - 🧭 Data de partida: {rota["data_partida"].strftime("%d/%m/%Y")}
                     """
                 )
                 continue
@@ -167,7 +171,6 @@ def render_resultado_rota(rota_idx: int):
             # =====================================================
             # ROTEIRO DO VOO
             # =====================================================
-
             with st.expander(
                 f"### 🗺️ Roteiro Completo",
                 expanded=False
@@ -179,3 +182,64 @@ def render_resultado_rota(rota_idx: int):
                             f"**Etapa {i + 1}:**<br>{texto}",
                             unsafe_allow_html=True
                         )
+            # =====================================================
+            # Carga dos hotéis do destino
+            # =====================================================
+            temHospedagem = not rota["hospedagem"] is None
+
+            with st.expander("🏨 Ver hotéis", expanded=temHospedagem or rota["carregar_hospedagem"]):
+                if rota["carregar_hospedagem"] == True:
+                     CarreguHoteis(rota)
+                     rota["carregar_hospedagem"] = False
+                elif not temHospedagem:
+                    if st.button("🔄 Carregar hotéis", key=f"load_hotel_{rota_idx}"):
+                        with st.spinner("Carregando dados dos hotéis..."):
+                           rota["carregar_hospedagem"] = True
+                           st.rerun()
+                else:
+                    hospedagemCarregada = rota["hospedagem"]
+                    if not hospedagemCarregada is None:
+                        carregue_hospedagem(rota, hospedagemCarregada)
+                   
+
+def CarreguHoteis(rota):
+    hoteis, totais, estrelas = buscar_dados_api(rota)
+    col_preco = f"Preço (R$) para {rota['num_hospedes']} hóspedes"
+    
+    hospedagem = {
+        "Hotel": hoteis,
+        col_preco: totais,
+        "Estrelas": estrelas
+    }
+    
+    carregue_hospedagem(rota, hospedagem)
+    rota["hospedagem"] = hospedagem
+
+# ============================================
+# CHAMADA À API
+# ============================================
+def buscar_dados_api(rota):
+
+    totais, estrelas, hoteis = get_top10_best_rated_total_stars_names(
+        destino=rota["destino"],
+        data_entrada=rota["data_partida"].strftime("%Y-%m-%d"),
+        dias_estadia=rota["diarias"],
+        min_estrelas=rota["min_estrelas"],
+        max_estrelas=rota["max_estrelas"],
+        num_hospedes=rota["num_hospedes"]
+    )
+
+    return hoteis, totais, estrelas
+
+def carregue_hospedagem(rota, hospedagem):
+    col_preco = f"Preço (R$) para {rota['num_hospedes']} hóspedes"
+    df = pd.DataFrame(hospedagem)
+
+    df.index = range(1, len(df) + 1)
+    df["Estrelas"] = df["Estrelas"].apply(format_estrelas)
+
+    df_styled = df.style.format({
+        col_preco: format_preco
+    })
+
+    st.dataframe(df_styled, width="content")

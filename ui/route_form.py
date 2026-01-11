@@ -1,6 +1,11 @@
 import streamlit as st
 from datetime import date
 
+def on_parametros_hospedagem_modificado(rota_idx):
+    rota = st.session_state.rotas[rota_idx]
+
+    if not st.session_state.resultados is None and len(st.session_state.resultados) > 0:
+        rota["carregar_hospedagem"] = True
 
 def render_rotas():
     placeholders = []
@@ -82,7 +87,9 @@ def render_rotas():
                     min_value=1,
                     value=int(c["tempo_max"]),
                     key=f"tempo_{i}",
-                    disabled=st.session_state.processando
+                    disabled=st.session_state.processando,
+                    on_change=on_parametros_hospedagem_modificado,
+                    args=(i,)
                 )
 
                 col7, col8, col9 = st.columns(3)
@@ -92,7 +99,9 @@ def render_rotas():
                     min_value=1,
                     value=c["diarias"],
                     key=f"diarias_{i}",
-                    disabled=st.session_state.processando
+                    disabled=st.session_state.processando,
+                    on_change=on_parametros_hospedagem_modificado,
+                    args=(i,)
                 )
 
                 c["num_hospedes"] = col8.number_input(
@@ -100,7 +109,9 @@ def render_rotas():
                     min_value=1,
                     value=c["num_hospedes"],
                     key=f"hosp_{i}",
-                    disabled=st.session_state.processando
+                    disabled=st.session_state.processando,
+                    on_change=on_parametros_hospedagem_modificado,
+                    args=(i,)
                 )
 
                 c["min_estrelas"], c["max_estrelas"] = col9.slider(
@@ -108,7 +119,8 @@ def render_rotas():
                     1, 5,
                     (c["min_estrelas"], c["max_estrelas"]),
                     key=f"stars_{i}",
-                    disabled=st.session_state.processando
+                    disabled=st.session_state.processando,
+                    on_change=on_parametros_hospedagem_modificado,
                 )
 
             # PLACEHOLDER PARA ADICIONAR OS RESULTADOS.

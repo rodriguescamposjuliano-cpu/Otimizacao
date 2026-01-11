@@ -1,7 +1,7 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from scraping.hotels_serpapi import get_top10_best_rated_total_stars_names
+from crawler.hotels_serpapi import get_top10_best_rated_total_stars_names
 
 totais, estrelas, nomes = get_top10_best_rated_total_stars_names(
     destino="Rio Grande do Sul",

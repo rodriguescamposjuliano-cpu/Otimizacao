@@ -5,6 +5,7 @@ from datetime import date
 def init_session_state():
     if "processando" not in st.session_state:
         st.session_state.processando = False
+
     if "rotas" not in st.session_state:
         st.session_state.rotas = [{
             "origem": "",
@@ -16,8 +17,11 @@ def init_session_state():
             "diarias": 1,
             "num_hospedes": 2,
             "min_estrelas": 3,
-            "max_estrelas": 5
+            "max_estrelas": 5,
+            "carregar_hospedagem": False,
+            "hospedagem": None
         }]
+
     if "resultados" not in st.session_state:
         st.session_state.resultados = []
 
@@ -37,12 +41,16 @@ def render_sidebar():
                 "diarias": 1,
                 "num_hospedes": 2,
                 "min_estrelas": 3,
-                "max_estrelas": 5
+                "max_estrelas": 5,
+                "carregar_hospedagem": False,
+                "hospedagem": None
             })
             st.rerun()
 
         if st.sidebar.button("Otimizar todas as rotas", key="btn_opt"):
             st.session_state.resultados = []
+            st.session_state.dados_hoteis = None
+            st.session_state.indice_rota = -1
             st.session_state.processando = True
             st.rerun()
     else:

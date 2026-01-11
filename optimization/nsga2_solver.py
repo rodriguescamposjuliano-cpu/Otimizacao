@@ -50,9 +50,10 @@ class RotaProblem(Problem):
             xu=len(tempos) - 1,
             type_var=int
         )
-
+    
+    
     def calcular_score(self, tempo, preco, conexoes,
-                        tempo_ideal, orcamento, cfg):
+                   tempo_ideal, orcamento, cfg):
         """
         Calcula o score de uma rota com base no perfil do usuário.
 
@@ -66,28 +67,49 @@ class RotaProblem(Problem):
         Perfis:
         - base = "preco": foca em preço (Mais barato)
         - base = "tempo": foca em tempo (Mais rápido)
-        - base equilibrado: combina todos os fatores
+        - base equilibrado: combina todos os fatores e para fins acadêmicos, definimos 300 o valor hora.
         """
-        viol_tempo = max(0, (tempo - tempo_ideal) / tempo_ideal)
-        viol_preco = max(0, (preco - orcamento) / orcamento)
 
+        viol_tempo = max(0, tempo - tempo_ideal)
+        viol_preco = max(0, preco - orcamento)
+
+        # ===================
+        # PERFIL MAIS BARATO
+        # ===================
         if cfg["base"] == "preco":
-            # Perfil Mais barato
             score = (
                 preco +
-                preco * viol_tempo * cfg["peso_tempo"] +
-                preco * viol_preco * cfg["peso_preco"] +
+                preco * (viol_tempo / tempo_ideal) * cfg["peso_tempo"] +
+                preco * (viol_preco / orcamento) * cfg["peso_preco"] +
                 conexoes * cfg["peso_conexoes"]
             )
-        else:
-            # Perfil Mais rápido
+
+        # ===================
+        # PERFIL MAIS RÁPIDO
+        # ===================
+        elif cfg["base"] == "tempo":
             score = (
                 tempo +
-                tempo * viol_preco * cfg["peso_preco"] +
+                tempo * (viol_preco / orcamento) * cfg["peso_preco"] +
+                conexoes * cfg["peso_conexoes"]
+            )
+
+        # ===================
+        # PERFIL EQUILIBRADO
+        # ===================
+        else:
+            custo_tempo = tempo * cfg["valor_hora"]
+
+            score = (
+                preco +
+                custo_tempo +
+                viol_tempo * cfg["valor_hora"] * cfg["peso_tempo"] +
+                viol_preco * cfg["peso_preco"] +
                 conexoes * cfg["peso_conexoes"]
             )
 
         return score
+
 
     def _evaluate(self, X, out, *args, **kwargs):
         """
@@ -147,9 +169,10 @@ def executar_nsga2(rotas, tempo_ideal, orcamento, perfil):
             "peso_conexoes": 2
         },
         "Equilibrado": {
-            "base": "preco",
-            "peso_tempo": 0.8,
-            "peso_preco": 0.8,
+            "base": "equilibrado",
+            "valor_hora": 300,          # R$/hora (ajustável)
+            "peso_tempo": 1.0,
+            "peso_preco": 1.0,
             "peso_conexoes": 10
         }
     }
