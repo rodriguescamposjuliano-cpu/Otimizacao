@@ -1,6 +1,5 @@
 # Ignorar ambiente virtual
 venv/
-.env
 
 # Ignorar arquivos CSV grandes
 data/resultados/*.csv
